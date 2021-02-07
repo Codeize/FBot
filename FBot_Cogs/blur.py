@@ -47,9 +47,12 @@ class blur(commands.Cog):
             await ctx.send(blur_help)
             return
 
-        with wand_image(filename="to_blur") as img:
+        with pil_image.open("to_blur") as img:
+            img.save("resized_to_blur", "PNG")
+
+        with wand_image(filename="resized_to_blur") as img:
             if len(img.sequence) > 1:
-                await ctx.send(".gif files are currently not supported! Please annoy FBot devs to implement this.")
+                await ctx.send(".gif filses are currently not supported! Please annoy FBot devs to implement this.")
                 return
             angle = amount * 5 / 9 # convert percent to degrees (100% = 180 degrees)
             img.rotational_blur(angle=angle)
@@ -58,7 +61,8 @@ class blur(commands.Cog):
         file = discord.File(fp="blurred.jpg")
         msg = await ctx.send("blur: ", file=file)
         os.remove("blurred.jpg")
-        os.remove("to_blur")      
+        os.remove("to_blur")
+        os.remove("resized_to_blur") 
 
 def setup(bot):
     bot.add_cog(blur(bot))
