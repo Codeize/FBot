@@ -1,11 +1,23 @@
 from discord.ext import commands
 from functions import cooldown
 from collections import deque
-from random import randint
 import asyncio
+
+from random import randint, choice
 
 emojis = ["⬆️", "⬇️", "⬅️", "➡️"]
 emojinames = ["up", "down", "left", "right"]
+
+food_emojis = [":green_apple:", ":apple:", ":pear:", ":tangerine:", ":lemon:",
+               ":banana:", ":watermelon:", ":grapes:", ":blueberries:",
+               ":strawberry:", ":melon:", ":cherries:", ":peach:", ":mango:",
+               ":pineapple:", ":coconut:", ":kiwi:", ":tomato:", ":eggplant:",
+               ":avocado:", ":corn:", ":carrot:", ":croissant:", ":bread:",
+               ":cheese:", ":bacon:", ":cut_of_meat:", ":poultry_leg:",
+               ":meat_on_bone:", ":hotdog:", ":hamburger:", ":pizza:",
+               ":taco:", ":fried_shrimp:", ":rice_ball:", ":icecream:",
+               ":pie:", ":cupcake:", ":doughnut:", ":cookie:", ":chestnut:",
+               ":peanuts:"]
 
 class snakegame():
     
@@ -15,45 +27,36 @@ class snakegame():
         self.width  = 8
         self.height = 8
         self.direction = "right"
+        self.food_emoji = ":apple:"  # This is immediately overwritten
 
         self.snake = deque()
-        self.snake.appendleft((0, 4))
-        self.snake.appendleft((1, 4))
-        self.snake.appendleft((2, 4))
+        self.snake.appendleft((0, int(self.height/2)))
+        self.snake.appendleft((1, int(self.height/2)))
+        self.snake.appendleft((2, int(self.height/2)))
 
         self.food = self.create_food_coords()
 
     def board(self):
         output = f"**Score:** {self.score}\n"
-        output += ":white_large_square:" * (self.width + 2) + "\n"
         for y in range(self.height):
-            output += ":white_large_square:"
+            output += "¦"
             for x in range(self.width):
                 if (x, y) in self.snake:
                     if (x, y) == self.snake[0]:
                         if self.alive:
                             output += ":flushed:"
                         else:
-                            output += ":skull:"
+                            output += ":dizzy_face:"
                     elif (x, y) == self.snake[-1]:
-                        if self.alive:
-                            output += ":yellow_circle:"
-                        else:
-                            output += ":white_circle:"
+                        output += ":yellow_circle:"
                     else:
-                        if self.alive:
-                            output += ":yellow_square:"
-                        else:
-                            output += ":white_large_square:"
+                        output += ":yellow_square:"
                 elif (x, y) == self.food:
-                    if self.alive:
-                        output += ":apple:"
-                    else:
-                        output += ":radioactive:"
+                    output += self.food_emoji
                 else:
-                    output += ":black_large_square:"
-            output += ":white_large_square:\n"
-        output += ":white_large_square:" * (self.width + 2)
+                    output += "<:blank:807750557032513556>"
+                    
+            output += "¦\n"
         return output
 
     def move(self):
@@ -81,6 +84,7 @@ class snakegame():
             self.snake.pop()
 
     def create_food_coords(self):
+        self.food_emoji = choice(food_emojis)
         x, y = randint(0, self.width-1), randint(0, self.height-1)
         while (x, y) in self.snake:
             x, y = randint(0, self.width-1), randint(0, self.height-1)
@@ -92,15 +96,14 @@ class snake(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.games = {}
-        
-    @commands.command(name="snake", alliases=["snek"])
-    @commands.check(cooldown)
     @commands.cooldown(1, 60, type=commands.BucketType.user)
+    @commands.command(name="snake", aliases=["snek"])
+    @commands.cooldown(1, 1, type=commands.BucketType.user)
     async def _Snake(self, ctx):
 
         user_id = ctx.author.id
         if user_id in self.games:
-            ctx.send("You are already in a game!")
+            await ctx.send("You are already in a game!")
             return
 
         game = self.games[user_id] = snakegame()
